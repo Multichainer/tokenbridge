@@ -1,17 +1,17 @@
 $theme-name: 'core';
 
 // base colors
-$primary-color: #5c34a2;
-$primary-color-dark: #502d8d;
+$primary-color: #06020c;
+$primary-color-dark: #000000;
 $primary-color-darker: #45277a;
-$secondary-color: #60db97;
+$secondary-color: #376DF9;
 $secondary-color-dark: #64a231;
 $tertiary-color: #ffaa07;
 $danger-color: #f13662;
 $blue-color: #3ab9fe;
 $base-button-bg-color: #08b3f2;
 
-$text-color: #333;
+$text-color: #e7e7e7;
 $link-color: $primary-color;
 
 $gradient-color-1: $primary-color;
@@ -54,7 +54,7 @@ $pattern-background-image: $base-images-path + '/themes/' + $theme-name + '/back
 
 // social icons
 $social-icons-background-color: #fff;
-$social-icons-icon-color: $primary-color;
+$social-icons-icon-color: $text-color;
 
 // logo
 $logo-image: $base-images-path + '/themes/' + $theme-name + '/logos/logo.svg';
@@ -101,16 +101,16 @@ $button-transfer-confirm-height: 40px;
 $button-transfer-confirm-max-width: 49%;
 
 // modals
-$modal-background-color: #fff;
-$modal-overlay-background-color: rgba($primary-color-dark, 0.8);
+$modal-background-color: #000;
+$modal-overlay-background-color: rgba($primary-color-dark, 0.5);
 $modal-title-color: $primary-color;
 $modal-text-color: $text-color;
-$modal-link-color: $primary-color;
-$daily-quota-modal-title: $primary-color;
+$modal-link-color: $primary-color-darker;
+$daily-quota-modal-title: $text-color;
 $modal-close-button: "../images/modal/close.svg";
 $modal-close-button-padding: 15px;
-$modal-close-button-right: -40px;
-$modal-close-button-top: 40px;
+$modal-close-button-right: 0px;
+$modal-close-button-top: 0px;
 $modal-close-button-top-mobile: -40px;
 $modal-close-button-right-mobile: 0px;
 $modal-min-width: 558px;
@@ -158,7 +158,7 @@ $bridge-transfer-title-color: $primary-color;
 $bridge-transfer-width: 880px;
 $bridge-transfer-button-height: 48px;
 $bridge-transfer-button-width: 92px;
-$bridge-transfer-button-border-radius: 3px;
+$bridge-transfer-button-border-radius: 7px;
 $form-container-height: 276px;
 $form-container-max-width: 384px;
 $network-container-height: 136px;
@@ -171,13 +171,13 @@ $network-container-justify-content: space-evenly;
 $bridge-input-label-font-size: 24px;
 $bridge-input-label-line-height: 48px;
 $bridge-input-label-margin: 0 10px;
-$bridge-transfer-button-border-radius: 0 0 3px 3px;
+$bridge-transfer-button-border-radius: 7px;
 $button-bridge-form-hover-background-color: darken($bridge-button-background-color, 10%);
 $button-transfer-cancel-hover-background-color: $button-bordered-background-color;
 $button-transfer-cancel-hover-text-color: $button-bordered-text-color;
 
 // Network details
-$network-details-body-border-radius: 0 10px 10px 10px;
+$network-details-body-border-radius: 20px;
 $network-details-body-mobile-height: 250px;
 
 // bridge alert
@@ -198,7 +198,7 @@ $transfer-operation-arrow-ellipse-image: $base-images-path + '/themes/' + $theme
 $transfer-operation-arrow-image: $base-images-path + '/themes/' + $theme-name + '/transparent.png';
 
 // copy icon
-$copy-icon-color: $primary-color;
+$copy-icon-color: $primary-color-darker;
 $copy-icon-hover-color: $copy-icon-color;
 
 // status section
@@ -226,14 +226,14 @@ $status-authority-logo-1: $base-images-path + '/themes/' + $theme-name + '/statu
 $status-authority-logo-2: $base-images-path + '/themes/' + $theme-name + '/status/authority/logo-2.svg';
 
 // datablock
-$datablock-value-color: $primary-color;
+$datablock-value-color: $text-color;
 $datablock-value-font-size: 30px;
 $datablock-value-line-height: 35px;
 $datablock-type-font-size: 18px;
 $datablock-type-line-height: 21px;
 $datablock-type-font-weight: normal;
 $datablock-type-margin-left: 10px;
-$datablock-type-color: $primary-color;
+$datablock-type-color: $text-color;
 $datablock-text-color: $text-color;
 $datablock-container-width: auto;
 $datablock-container-height: auto;

@@ -23,7 +23,7 @@ export class StatisticsPage extends React.Component {
       <Redirect to="/" />
     ) : (
       <div className="statistics-page">
-        <div className="statistics-left-container" />
+        {/* <div className="statistics-left-container" /> */}
         <div className="statistics-page-container">
           <div className="statistics-bridge-container">
             <span className="statistics-bridge-title statistics-title">Bridge Statistics</span>
@@ -65,9 +65,9 @@ export class StatisticsPage extends React.Component {
             </div>
           </div>
         </div>
-        <div className="pattern-background">
+        {/* <div className="pattern-background">
           <div className="pattern-background-image" />
-        </div>
+        </div> */}
       </div>
     )
   }

@@ -38,9 +38,9 @@ export const NetworkDetails = ({
 
   return (
     <div className="network-details" data-testid="network-details">
-      <div className={`details-logo-container details-logo-container-${REACT_APP_UI_STYLES}`}>
+      {/* <div className={`details-logo-container details-logo-container-${REACT_APP_UI_STYLES}`}>
         <div className={logoClass} />
-      </div>
+      </div> */}
       <div className={`details-body details-body-${REACT_APP_UI_STYLES}`}>
         <p className={`details-data-container details-data-container-${REACT_APP_UI_STYLES}`}>
           <span className="details-title">{networkName}</span>

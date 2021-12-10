@@ -12,7 +12,9 @@ html {
 }
 
 body {
-  background-color: $main-background-color;
+  background: url(https://res.cloudinary.com/dfbhd7liw/image/upload/v1637668838/bg.png);
+  background-repeat: no-repeat;
+  background-size: cover;
   box-sizing: border-box;
   font-family: $main-font-family;
   padding-bottom: $footer-height_desktop;
@@ -91,10 +93,12 @@ strong {
 }
 
 .app-container {
+  height: calc(100vh - 136px);
   margin-left: auto;
   margin-right: auto;
   position: relative;
   width: 100%;
+  background: #00000080;
 }
 
 .only-mobile {

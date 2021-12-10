@@ -49,7 +49,7 @@ export class StatusPage extends React.Component {
     }
     return (
       <div className="status-page">
-        <div className="status-left-container" />
+        {/* <div className="status-left-container" /> */}
         <div className="status-page-container">
           <div className="status-configuration-container">
             <span className="status-configuration-title status-title">Configuration</span>
@@ -91,9 +91,9 @@ export class StatusPage extends React.Component {
             </div>
           )}
         </div>
-        <div className="pattern-background">
+        {/* <div className="pattern-background">
           <div className="pattern-background-image" />
-        </div>
+        </div> */}
       </div>
     )
   }

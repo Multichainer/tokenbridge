@@ -18,19 +18,19 @@ export const SocialIcons = () => {
   const socialItems = [
     {
       icon: useAlternativeIcons ? <IconXDai /> : <IconPOA />,
-      link: useAlternativeIcons ? 'https://xdaichain.com/' : 'https://poa.network'
+      link: useAlternativeIcons ? 'https://xdaichain.com/' : 'https://'
     },
     {
       icon: useAlternativeIcons ? <AlternativeIconTwitter /> : <IconTwitter />,
-      link: useAlternativeIcons ? 'https://twitter.com/xdaichain' : 'https://twitter.com/poanetwork'
+      link: useAlternativeIcons ? 'https://twitter.com/xdaichain' : 'https://'
     },
     {
       icon: useAlternativeIcons ? <AlternativeIconTelegram /> : <IconTelegram />,
-      link: useAlternativeIcons ? 'https://t.me/xdaistable' : 'https://t.me/poa_network'
+      link: useAlternativeIcons ? 'https://t.me/xdaistable' : 'https://'
     },
     {
       icon: useAlternativeIcons ? <AlternativeIconGithub /> : <IconGithub />,
-      link: useAlternativeIcons ? 'https://github.com/xdaichain' : 'https://github.com/poanetwork/tokenbridge'
+      link: useAlternativeIcons ? 'https://github.com/xdaichain' : 'https://'
     }
   ]
 
