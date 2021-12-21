@@ -26,9 +26,9 @@ export const TransferAlert = ({
       </div>
       <div className="alert-container">
         <div className={`transfer-title transfer-title-${REACT_APP_UI_STYLES}`}>
-          <div className="alert-logo-box">
+          {/* <div className="alert-logo-box">
             <div className={reverse ? 'foreign-logo' : 'home-logo'} />
-          </div>
+          </div> */}
           <div>
             <strong>{formattedFromAmount}</strong> {fromCurrency}
           </div>
@@ -36,9 +36,9 @@ export const TransferAlert = ({
           <div>
             <strong>{formattedToAmount}</strong> {toCurrency}
           </div>
-          <div className="alert-logo-box">
+          {/* <div className="alert-logo-box">
             <div className={reverse ? 'home-logo' : 'foreign-logo'} />
-          </div>
+          </div> */}
         </div>
         <div className={`transfer-title-alternative transfer-title-alternative-${REACT_APP_UI_STYLES}`}>
           <span className="transfer-title-text">Confirm Transfer</span>

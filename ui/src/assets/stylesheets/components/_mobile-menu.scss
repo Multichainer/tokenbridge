@@ -18,7 +18,7 @@
 
 .mobile-menu-open {
     @media screen and (max-width: $mobile-width) {
-        background-color: $mobile-menu-overlay-color;
+        background-color: rgba(#000000, 0.8);
         height: 100%;
         position: fixed;
         width: 100%;

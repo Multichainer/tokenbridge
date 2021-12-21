@@ -4,10 +4,7 @@ import {
   AlternativeIconTelegram,
   AlternativeIconTwitter,
   IconGithub,
-  IconPOA,
   IconTelegram,
-  IconTwitter,
-  IconXDai
 } from './social-icons'
 
 export const SocialIcons = () => {
@@ -17,20 +14,12 @@ export const SocialIcons = () => {
 
   const socialItems = [
     {
-      icon: useAlternativeIcons ? <IconXDai /> : <IconPOA />,
-      link: useAlternativeIcons ? 'https://xdaichain.com/' : 'https://'
-    },
-    {
-      icon: useAlternativeIcons ? <AlternativeIconTwitter /> : <IconTwitter />,
-      link: useAlternativeIcons ? 'https://twitter.com/xdaichain' : 'https://'
-    },
-    {
       icon: useAlternativeIcons ? <AlternativeIconTelegram /> : <IconTelegram />,
-      link: useAlternativeIcons ? 'https://t.me/xdaistable' : 'https://'
+      link: useAlternativeIcons ? 'https://t.me/xdaistable' : 'https://t.me/joinchat/33zRfYDqHEc2M2Fi'
     },
     {
       icon: useAlternativeIcons ? <AlternativeIconGithub /> : <IconGithub />,
-      link: useAlternativeIcons ? 'https://github.com/xdaichain' : 'https://'
+      link: useAlternativeIcons ? 'https://github.com/xdaichain' : 'https://github.com/Multichainer/tokenbridge/tree/allow-relay-tokens/bridge-landing'
     }
   ]
 

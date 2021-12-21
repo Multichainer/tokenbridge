@@ -32,6 +32,7 @@ export const Disclaimer = ({ onConfirmation }) => (
           target="_blank"
           rel="noopener noreferrer"
         >
+          {' '}
           Terms of Service
         </a>{' '}
         in full, and that you agree to be legally bound by them.

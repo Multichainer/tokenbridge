@@ -8,7 +8,8 @@ export const Footer = () => {
   return (
     <footer className="footer">
       <div className="container">
-        <Link to="/" className={logoClass} />
+        <a href="http://multichain.to" rel="noopener noreferrer" className="footer-logo"></a>
+        {/* <Link to="/" className={logoClass} /> */}
         <SocialIcons />
       </div>
     </footer>

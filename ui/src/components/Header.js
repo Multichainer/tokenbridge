@@ -47,15 +47,13 @@ export class Header extends React.Component {
 
     return (
       <header className={`header header-${REACT_APP_UI_STYLES}`}>
-        {showMobileMenu ? (
-          <MobileMenu selected={selected} withoutEvents={withoutEvents} onMenuToggle={this.changeSelectedMenuMobile} />
-        ) : null}
         <div className="container">
-          <Link
+          {/* <Link
             to="/"
             onClick={showMobileMenu ? onMenuToggle : () => this.changeSelectedMenu('/')}
             className="header-logo"
-          />
+          /> */}
+          <a href="http://multichain.to" rel="noopener noreferrer" className="header-logo"></a>
           <HeaderMenu
             selected={selected}
             withoutEvents={withoutEvents}
@@ -64,6 +62,10 @@ export class Header extends React.Component {
           />
           <MobileMenuButton onMenuToggle={onMenuToggle} showMobileMenu={showMobileMenu} />
         </div>
+        {showMobileMenu ? (
+          <MobileMenu selected={selected} withoutEvents={withoutEvents} onMenuToggle={this.changeSelectedMenuMobile} />
+        ) : null}
+        
         {alertStore && alertStore.showDailyQuotaInfo && <DailyQuotaModal />}
       </header>
     )

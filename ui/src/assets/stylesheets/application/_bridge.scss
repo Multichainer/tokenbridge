@@ -710,13 +710,13 @@
             }
             .transfer-title {
                 align-items: center;
-                color: $bridge-transfer-title-color;
+                color: $text-color;
                 display: flex;
                 font-size: 14px;
                 justify-content: space-between;
 
                 path {
-                    fill: $primary-color;
+                    fill: $text-color;
                 }
 
                 .alert-logo-box {
@@ -1045,6 +1045,7 @@
                 padding-left: 1%;
                 padding-right: 1%;
             }
+            a {color: $secondary-color;}
         }
         .disclaimer-tos {
             color: $modal-text-color;
