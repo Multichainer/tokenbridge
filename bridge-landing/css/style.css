@@ -53,9 +53,9 @@ fieldset { padding: 0px; margin: 0px; border: 0px; }
 .r_ .ny { padding: 24px; }
 .in .tiles-wrap.nm::after { flex-basis: 344px; max-width: 344px; }
 .in .ng { flex-basis: 344px; max-width: 344px; }
-.in .ny { padding: 20px 24px; }
+.in .ny { padding: 15px 60px; }
 .ir { -webkit-box-flex: 1; flex-grow: 1; }
-.ir > img { width: 100%; height: 40px; margin: 0px auto 20px; }
+.ir > img { width: 100%; height: 30px; margin: 0px auto 15px; }
 .is .tiles-wrap { margin-right: -16px; margin-left: -16px; margin-top: -16px; }
 .is .tiles-wrap:last-of-type { margin-bottom: -16px; }
 .is .tiles-wrap:not(:last-of-type) { margin-bottom: 16px; }
@@ -104,8 +104,8 @@ h1, h2, h3, h4, h5, h6, .i, .s, .o, .u, .a, .f {
   }}
 a {cursor: pointer}
 h2, .s {
-  font-size: 16px;
-  line-height: 16px;
+  font-size: 14px;
+  line-height: 22px;
 }
 .tcontainern,
 .rcontaineri,
