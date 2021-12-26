@@ -163,7 +163,7 @@ class ForeignStore {
     this.getFee()
     this.getRequiredBlockConfirmations()
     this.getValidators()
-    this.getStatistics()
+    //this.getStatistics()
     this.getFeeEvents()
     setInterval(() => {
       this.getBlockNumber()
@@ -444,30 +444,30 @@ class ForeignStore {
     }
   }
 
-  async getStatistics() {
-    try {
-      if (isMediatorMode(this.rootStore.bridgeMode)) {
-        const events = await getPastEvents(this.foreignBridge, 0, 'latest', 'TokensBridged')
-        processLargeArrayAsync(events, this.processMediatorEvent, () => {
-          this.statistics.finished = true
-          this.rootStore.homeStore.statistics.totalBridged = this.rootStore.homeStore.statistics.totalBridged.plus(
-            this.rootStore.homeStore.statistics.withdrawalsValue
-          )
-        })
-        const lastEventRelayedOnForeign = events.length ? events[events.length - 1] : null
-        if (lastEventRelayedOnForeign) {
-          const blockNumber = lastEventRelayedOnForeign.blockNumber
-          const block = await this.foreignWeb3.eth.getBlock(blockNumber)
-          this.lastEventRelayedOnForeign = block.timestamp
-        }
-      } else {
-        this.statistics.finished = true
-      }
-    } catch (e) {
-      console.error(e)
-      this.getStatistics()
-    }
-  }
+  // async getStatistics() {
+  //   try {
+  //     if (isMediatorMode(this.rootStore.bridgeMode)) {
+  //       const events = await getPastEvents(this.foreignBridge, 0, 'latest', 'TokensBridged')
+  //       processLargeArrayAsync(events, this.processMediatorEvent, () => {
+  //         this.statistics.finished = true
+  //         this.rootStore.homeStore.statistics.totalBridged = this.rootStore.homeStore.statistics.totalBridged.plus(
+  //           this.rootStore.homeStore.statistics.withdrawalsValue
+  //         )
+  //       })
+  //       const lastEventRelayedOnForeign = events.length ? events[events.length - 1] : null
+  //       if (lastEventRelayedOnForeign) {
+  //         const blockNumber = lastEventRelayedOnForeign.blockNumber
+  //         const block = await this.foreignWeb3.eth.getBlock(blockNumber)
+  //         this.lastEventRelayedOnForeign = block.timestamp
+  //       }
+  //     } else {
+  //       this.statistics.finished = true
+  //     }
+  //   } catch (e) {
+  //     console.error(e)
+  //     this.getStatistics()
+  //   }
+  // }
 
   processMediatorEvent = event => {
     if (event.returnValues && event.returnValues.recipient) {
