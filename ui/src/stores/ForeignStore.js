@@ -263,63 +263,63 @@ class ForeignStore {
 
   @action
   async getEvents(fromBlock, toBlock) {
-    fromBlock = fromBlock || this.filteredBlockNumber || this.latestBlockNumber - 50
-    toBlock = toBlock || this.filteredBlockNumber || 'latest'
-
-    if (fromBlock < 0) {
-      fromBlock = 0
-    }
-
-    if (!isMediatorMode(this.rootStore.bridgeMode)) {
-      try {
-        let foreignEvents = await getPastEvents(this.foreignBridge, fromBlock, toBlock).catch(e => {
-          console.error("Couldn't get events", e)
-          return []
-        })
-
-        if (!this.filter) {
-          this.events = foreignEvents
-        }
-
-        if (this.waitingForConfirmation.size) {
-          const confirmationEvents = foreignEvents.filter(
-            event =>
-              event.event === 'RelayedMessage' && this.waitingForConfirmation.has(event.returnValues.transactionHash)
-          )
-          confirmationEvents.forEach(async event => {
-            const TxReceipt = await this.getTxReceipt(event.transactionHash)
-            if (TxReceipt && TxReceipt.logs && TxReceipt.logs.length > 1 && this.waitingForConfirmation.size) {
-              this.alertStore.setLoadingStepIndex(3)
-              const urlExplorer = this.getExplorerTxUrl(event.transactionHash)
-              const unitReceived = getUnit(this.rootStore.bridgeMode).unitForeign
-              setTimeout(() => {
-                this.alertStore.pushSuccess(
-                  `${unitReceived} received on ${this.networkName} on Tx
-            <a href='${urlExplorer}' target='blank' style="overflow-wrap: break-word;word-wrap: break-word;">
-            ${event.transactionHash}</a>`,
-                  this.alertStore.FOREIGN_TRANSFER_SUCCESS
-                )
-              }, 2000)
-              this.waitingForConfirmation.delete(event.returnValues.transactionHash)
-            }
-          })
-
-          if (confirmationEvents.length) {
-            removePendingTransaction()
-          }
-        }
-
-        return foreignEvents
-      } catch (e) {
-        this.alertStore.pushError(
-          `Cannot establish connection to Foreign Network.\n
-                 Please make sure you have set it up in env variables`,
-          this.alertStore.FOREIGN_CONNECTION_ERROR
-        )
-      }
-    } else {
-      this.detectMediatorTransferFinished(fromBlock, toBlock)
-    }
+    // fromBlock = fromBlock || this.filteredBlockNumber || this.latestBlockNumber - 50
+    // toBlock = toBlock || this.filteredBlockNumber || 'latest'
+    //
+    // if (fromBlock < 0) {
+    //   fromBlock = 0
+    // }
+    //
+    // if (!isMediatorMode(this.rootStore.bridgeMode)) {
+    //   try {
+    //     let foreignEvents = await getPastEvents(this.foreignBridge, fromBlock, toBlock).catch(e => {
+    //       console.error("Couldn't get events", e)
+    //       return []
+    //     })
+    //
+    //     if (!this.filter) {
+    //       this.events = foreignEvents
+    //     }
+    //
+    //     if (this.waitingForConfirmation.size) {
+    //       const confirmationEvents = foreignEvents.filter(
+    //         event =>
+    //           event.event === 'RelayedMessage' && this.waitingForConfirmation.has(event.returnValues.transactionHash)
+    //       )
+    //       confirmationEvents.forEach(async event => {
+    //         const TxReceipt = await this.getTxReceipt(event.transactionHash)
+    //         if (TxReceipt && TxReceipt.logs && TxReceipt.logs.length > 1 && this.waitingForConfirmation.size) {
+    //           this.alertStore.setLoadingStepIndex(3)
+    //           const urlExplorer = this.getExplorerTxUrl(event.transactionHash)
+    //           const unitReceived = getUnit(this.rootStore.bridgeMode).unitForeign
+    //           setTimeout(() => {
+    //             this.alertStore.pushSuccess(
+    //               `${unitReceived} received on ${this.networkName} on Tx
+    //         <a href='${urlExplorer}' target='blank' style="overflow-wrap: break-word;word-wrap: break-word;">
+    //         ${event.transactionHash}</a>`,
+    //               this.alertStore.FOREIGN_TRANSFER_SUCCESS
+    //             )
+    //           }, 2000)
+    //           this.waitingForConfirmation.delete(event.returnValues.transactionHash)
+    //         }
+    //       })
+    //
+    //       if (confirmationEvents.length) {
+    //         removePendingTransaction()
+    //       }
+    //     }
+    //
+    //     return foreignEvents
+    //   } catch (e) {
+    //     this.alertStore.pushError(
+    //       `Cannot establish connection to Foreign Network.\n
+    //              Please make sure you have set it up in env variables`,
+    //       this.alertStore.FOREIGN_CONNECTION_ERROR
+    //     )
+    //   }
+    // } else {
+    //   this.detectMediatorTransferFinished(fromBlock, toBlock)
+    // }
   }
 
   @action
@@ -480,21 +480,21 @@ class ForeignStore {
   }
 
   async getFeeEvents() {
-    if (!isMediatorMode(this.rootStore.bridgeMode)) {
-      try {
-        const deployedAtBlock = await getDeployedAtBlock(this.foreignBridge)
-        const events = await getPastEvents(this.foreignBridge, deployedAtBlock, 'latest')
-
-        processLargeArrayAsync(events, this.processEvent, () => {
-          this.feeEventsFinished = true
-        })
-      } catch (e) {
-        console.error(e)
-        this.getFeeEvents()
-      }
-    } else {
-      this.feeEventsFinished = true
-    }
+    // if (!isMediatorMode(this.rootStore.bridgeMode)) {
+    //   try {
+    //     const deployedAtBlock = await getDeployedAtBlock(this.foreignBridge)
+    //     const events = await getPastEvents(this.foreignBridge, deployedAtBlock, 'latest')
+    //
+    //     processLargeArrayAsync(events, this.processEvent, () => {
+    //       this.feeEventsFinished = true
+    //     })
+    //   } catch (e) {
+    //     console.error(e)
+    //     this.getFeeEvents()
+    //   }
+    // } else {
+    //   this.feeEventsFinished = true
+    // }
   }
 
   processEvent = event => {
