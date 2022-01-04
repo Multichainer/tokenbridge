@@ -319,69 +319,69 @@ class HomeStore {
 
   @action
   async getEvents(fromBlock, toBlock) {
-    // fromBlock = fromBlock || this.filteredBlockNumber || this.latestBlockNumber - 50
-    // toBlock = toBlock || this.filteredBlockNumber || 'latest'
-    //
-    // if (fromBlock < 0) {
-    //   fromBlock = 0
-    // }
-    //
-    // if (!isMediatorMode(this.rootStore.bridgeMode)) {
-    //   try {
-    //     let events = await getPastEvents(this.homeBridge, fromBlock, toBlock).catch(e => {
-    //       console.error("Couldn't get events", e)
-    //       return []
-    //     })
-    //
-    //     let homeEvents = []
-    //     await asyncForEach(events, async event => {
-    //       if (event.event === 'SignedForUserRequest' || event.event === 'CollectedSignatures') {
-    //         event.signedTxHash = await this.getSignedTx(event.returnValues.messageHash)
-    //       }
-    //       homeEvents.push(event)
-    //     })
-    //
-    //     if (!this.filter) {
-    //       this.events = homeEvents
-    //     }
-    //
-    //     if (this.waitingForConfirmation.size) {
-    //       const confirmationEvents = homeEvents.filter(
-    //         event =>
-    //           event.event === 'AffirmationCompleted' &&
-    //           this.waitingForConfirmation.has(event.returnValues.transactionHash)
-    //       )
-    //       confirmationEvents.forEach(event => {
-    //         this.alertStore.setLoadingStepIndex(3)
-    //         const urlExplorer = this.getExplorerTxUrl(event.transactionHash)
-    //         const unitReceived = getUnit(this.rootStore.bridgeMode).unitHome
-    //         setTimeout(() => {
-    //           this.alertStore.pushSuccess(
-    //             `${unitReceived} received on ${this.networkName} on Tx
-    //           <a href='${urlExplorer}' target='blank' style="overflow-wrap: break-word;word-wrap: break-word;">
-    //           ${event.transactionHash}</a>`,
-    //             this.alertStore.HOME_TRANSFER_SUCCESS
-    //           )
-    //         }, 2000)
-    //         this.waitingForConfirmation.delete(event.returnValues.transactionHash)
-    //       })
-    //
-    //       if (confirmationEvents.length) {
-    //         removePendingTransaction()
-    //       }
-    //     }
-    //
-    //     return homeEvents
-    //   } catch (e) {
-    //     this.alertStore.pushError(
-    //       `Cannot establish connection to Home Network.\n
-    //              Please make sure you have set it up in env variables`,
-    //       this.alertStore.HOME_CONNECTION_ERROR
-    //     )
-    //   }
-    // } else {
-    //   this.detectMediatorTransferFinished(fromBlock, toBlock)
-    // }
+    fromBlock = fromBlock || this.filteredBlockNumber || this.latestBlockNumber - 50
+    toBlock = toBlock || this.filteredBlockNumber || 'latest'
+
+    if (fromBlock < 0) {
+      fromBlock = 0
+    }
+
+    if (!isMediatorMode(this.rootStore.bridgeMode)) {
+      try {
+        let events = await getPastEvents(this.homeBridge, fromBlock, toBlock).catch(e => {
+          console.error("Couldn't get events", e)
+          return []
+        })
+
+        let homeEvents = []
+        await asyncForEach(events, async event => {
+          if (event.event === 'SignedForUserRequest' || event.event === 'CollectedSignatures') {
+            event.signedTxHash = await this.getSignedTx(event.returnValues.messageHash)
+          }
+          homeEvents.push(event)
+        })
+
+        if (!this.filter) {
+          this.events = homeEvents
+        }
+
+        if (this.waitingForConfirmation.size) {
+          const confirmationEvents = homeEvents.filter(
+            event =>
+              event.event === 'AffirmationCompleted' &&
+              this.waitingForConfirmation.has(event.returnValues.transactionHash)
+          )
+          confirmationEvents.forEach(event => {
+            this.alertStore.setLoadingStepIndex(3)
+            const urlExplorer = this.getExplorerTxUrl(event.transactionHash)
+            const unitReceived = getUnit(this.rootStore.bridgeMode).unitHome
+            setTimeout(() => {
+              this.alertStore.pushSuccess(
+                `${unitReceived} received on ${this.networkName} on Tx
+              <a href='${urlExplorer}' target='blank' style="overflow-wrap: break-word;word-wrap: break-word;">
+              ${event.transactionHash}</a>`,
+                this.alertStore.HOME_TRANSFER_SUCCESS
+              )
+            }, 2000)
+            this.waitingForConfirmation.delete(event.returnValues.transactionHash)
+          })
+
+          if (confirmationEvents.length) {
+            removePendingTransaction()
+          }
+        }
+
+        return homeEvents
+      } catch (e) {
+        this.alertStore.pushError(
+          `Cannot establish connection to Home Network.\n
+                 Please make sure you have set it up in env variables`,
+          this.alertStore.HOME_CONNECTION_ERROR
+        )
+      }
+    } else {
+      this.detectMediatorTransferFinished(fromBlock, toBlock)
+    }
   }
 
   async getSignedTx(messageHash) {
