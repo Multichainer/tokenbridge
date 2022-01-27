@@ -12,10 +12,10 @@ export const BridgeNetwork = ({ balance, currency, isHome, networkSubtitle, netw
   const showMore = () =>
     isHome ? (
       <div className="bridge-network-data" onClick={showModal}>
+        <span className="network-show-more">Show More</span>
         <span className="info-icon info-icon-left">
           <InfoIcon />
         </span>
-        <span className="network-show-more">Show More</span>
       </div>
     ) : (
       <div className="bridge-network-data" onClick={showModal}>
