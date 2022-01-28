@@ -18,13 +18,6 @@ export const MenuItems = ({ selected, onMenuToggle = null, withoutEvents, displa
       link: '/status',
       text: 'Status',
       selected: selected === '/status'
-    },
-    {
-      hide: withoutEvents,
-      icon: <StatisticsIcon />,
-      link: '/statistics',
-      text: 'Statistics',
-      selected: selected === '/statistics'
     }
   ]
 
