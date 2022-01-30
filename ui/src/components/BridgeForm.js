@@ -1,6 +1,6 @@
 import React from 'react'
 
-export const BridgeForm = ({ reverse, currency, onTransfer, onInputChange, displayArrow }) => {
+export const BridgeForm = ({ reverse, currency, onTransfer, onInputChange, displayArrow, disabled }) => {
   const { REACT_APP_UI_STYLES } = process.env
   return (
     <div className={`form-container ${displayArrow || REACT_APP_UI_STYLES === 'stake' ? 'transfer-right' : ''}`}>
@@ -14,19 +14,20 @@ export const BridgeForm = ({ reverse, currency, onTransfer, onInputChange, displ
               type="text"
               className="bridge-form-input"
               id="amount"
-              placeholder="0"
+              placeholder={disabled ? '100' : "0"}
             />
             <label htmlFor="amount" className="bridge-form-label">
               {currency}
             </label>
           </div>
           <div>
-            <button type="submit" className="bridge-form-button">
+            <button type="submit" className="bridge-form-button" style={{opacity: disabled ? '.5' : null}} disabled={disabled}>
               Transfer
             </button>
           </div>
         </div>
       </form>
+      {disabled && <div style={{color: '#f100ff', fontSize: 12, display: "flex", marginTop: 10}}>Min amount 100</div>}
     </div>
   )
 }

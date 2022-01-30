@@ -130,7 +130,7 @@ $modal-title-color: #fff;
         justify-content: center;
 
         @media screen and (max-width: $full-width) {
-            height: 389px;
+            height: 100%;
         }
         .left-image-wrapper {
             background-color: $bridge-gradient-start;
@@ -183,7 +183,6 @@ $modal-title-color: #fff;
         .bridge-transfer-content {
             background: #00000080;
             border-radius: 20px;
-            border: 1px solid #540858;
             text-align: center;
             // display: flex;
             flex-shrink: 0;
@@ -197,9 +196,10 @@ $modal-title-color: #fff;
             }
 
             @media screen and (max-width: $full-width) {
-                border-radius: 8px;
+                border-radius: 25px;
                 flex-direction: column;
                 max-width: 92%;
+                padding: 50px;
             }
 
             .bridge-transfer-content-background {
@@ -378,6 +378,7 @@ $modal-title-color: #fff;
                     align-self: center;
                     height: 115px;
                     width: 100%;
+                    margin: 10% auto;
                 }
                 .bridge-form {
                     display: flex;

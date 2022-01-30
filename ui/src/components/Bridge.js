@@ -169,6 +169,10 @@ export class Bridge extends React.Component {
       swal('Error', 'Please specify amount', 'error')
       return
     }
+    // if (amount < 100) {
+    //   swal('Error', 'min  amount 100', 'error')
+    //   return
+    // }
 
     const { foreignStore, web3Store, homeStore } = this.props.RootStore
 
@@ -337,6 +341,7 @@ export class Bridge extends React.Component {
     const foreignNetworkName = this.getNetworkTitle(foreignStore.networkName)
     const foreignNetworkSubtitle = this.getNetworkSubTitle(foreignStore.networkName)
 
+    const validAmount = formCurrency === 'BUSD' && this.state.amount.trim() < 100;
     return (
       <div className="bridge-container">
         <div className="bridge">
@@ -364,6 +369,7 @@ export class Bridge extends React.Component {
                   onInputChange={this.handleInputChange('amount')}
                   onTransfer={this.onTransfer}
                   reverse={reverse}
+                  disabled={validAmount}
                 />
                 <BridgeNetwork
                   balance={reverse ? homeStore.getDisplayedBalance() : foreignStore.balance}
