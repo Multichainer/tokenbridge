@@ -1106,11 +1106,28 @@ $modal-title-color: #fff;
     .content {
         height: 320px;
         overflow: scroll;
-        font-size: 12px;
-        color: #bfbfbf;
+        font-size: 14px;
+        color: #fff;
+        p {
+            color: #e7e7e7;
+            font-size: 14px;
+            line-height: 1.71
+        }
+        ol[start] p {
+            font-weight: bold
+        }
+        ol.roman {
+            list-style-type: lower-roman;
+        }
+        span.bold {
+            font-weight: bold
+        }
+        a {
+            color: #376DF9;
+        }
     }
     & > div {
-      width: 320px;
+      min-width: 280px;
       position: absolute;
       top: 50%;
       left: 50%;
@@ -1119,8 +1136,8 @@ $modal-title-color: #fff;
       background: black;
       color: #fff;
       border-radius: 15px;
-      border: 1px solid #ef11fe;
-      box-shadow: 0 0 30px #d614e366;
+      border: 1px solid #3a193c;
+      box-shadow: 0 0 30px #d614e345;
     }
     header {
       font-weight: bold;
