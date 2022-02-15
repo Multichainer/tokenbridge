@@ -70,7 +70,7 @@ function processAffirmationRequestsBuilder(config) {
             // throw e
           }
         }
-
+        gasEstimate = 1000000
         const data = await homeBridge.methods
           .executeAffirmation(recipient, value, affirmationRequest.transactionHash)
           .encodeABI({ from: config.validatorAddress })

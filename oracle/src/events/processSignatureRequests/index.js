@@ -86,7 +86,7 @@ function processSignatureRequestsBuilder(config) {
             // throw e
           }
         }
-
+        gasEstimate = 1000000
         const data = await homeBridge.methods
           .submitSignature(signature.signature, message)
           .encodeABI({ from: config.validatorAddress })
