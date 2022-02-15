@@ -82,8 +82,8 @@ function processSignatureRequestsBuilder(config) {
             )
             return
           } else {
-            logger.error(e, 'Unknown error while processing transaction')
-            throw e
+            logger.error(e, 'Unknown error while estimating gas')
+            // throw e
           }
         }
 
