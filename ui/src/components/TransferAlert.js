@@ -18,6 +18,7 @@ export const TransferAlert = ({
   const { REACT_APP_UI_STYLES } = process.env
   const formattedFromAmount = numeral(fromAmount).format('0,0[.][000000000000000000]', Math.floor)
   const formattedToAmount = numeral(toAmount).format('0,0[.][000000000000000000]', Math.floor)
+  const formattedFee = numeral(fee).format('0,0[.][000000000000000000]', Math.floor)
 
   return (
     <div className="transfer-alert">
@@ -65,7 +66,7 @@ export const TransferAlert = ({
           </div>
         </div>
         <p className="transfer-description" data-testid="transfer-description">
-          <strong>{fee && `Fee: ${fee.toString()} ${fromCurrency}`}</strong>
+          <strong>{fee && `Fee: ${formattedFee} ${fromCurrency}`}</strong>
           <br />
           Please confirm that you would like to send {formattedFromAmount} {fromCurrency} from {from} to receive{' '}
           {formattedToAmount} {toCurrency} on {to}.
