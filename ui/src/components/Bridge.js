@@ -193,7 +193,7 @@ export class Bridge extends React.Component {
     const feeToApply = getFeeToApply(homeStore.feeManager, foreignStore.feeManager, !reverse)
 
     if (validFee(feeToApply)) {
-      fee = feeToApply.multipliedBy(100)
+      fee = feeToApply
       finalAmount = finalAmount.multipliedBy(1 - feeToApply)
     }
 
