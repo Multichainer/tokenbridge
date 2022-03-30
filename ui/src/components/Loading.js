@@ -14,7 +14,7 @@ export class Loading extends React.Component {
     const progress = loadingStepIndex === 3 ? 100 : 25 + (blockConfirmations / requiredBlockConfirmations) * 50
     const radius = REACT_APP_UI_STYLES === 'stake' ? 33 : 40
 
-    return // (
+    return null // (
       // <div className={`loading-container ${loadingStepIndex > 0 ? 'mobile-container' : ''}`} style={style}>
       //   <div
       //     className={`loading-container-content ${
