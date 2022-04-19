@@ -194,7 +194,7 @@ export class Bridge extends React.Component {
 
     if (validFee(feeToApply)) {
       fee = feeToApply
-      finalAmount = finalAmount.multipliedBy(1 - feeToApply)
+      finalAmount = finalAmount.minus(feeToApply)
     }
 
     const confirmationData = {
