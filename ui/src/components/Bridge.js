@@ -11,7 +11,7 @@ import { NetworkDetails } from './NetworkDetails'
 import { TransferAlert } from './TransferAlert'
 import { getFeeToApply, validFee } from '../stores/utils/rewardable'
 import { inject, observer } from 'mobx-react'
-import { toDecimals } from '../stores/utils/decimals'
+import { fromDecimals, toDecimals } from '../stores/utils/decimals'
 
 @inject('RootStore')
 @observer
@@ -193,8 +193,12 @@ export class Bridge extends React.Component {
     const feeToApply = getFeeToApply(homeStore.feeManager, foreignStore.feeManager, !reverse)
 
     if (validFee(feeToApply)) {
-      fee = feeToApply
-      finalAmount = finalAmount.minus(feeToApply)
+      fee = feeToApply.multipliedBy(10**12)
+      if (finalAmount.lt(fee)) {
+        swal('Error', 'amount is less than a fee', 'error')
+        return
+      }
+      finalAmount = finalAmount.minus(fee)
     }
 
     const confirmationData = {
