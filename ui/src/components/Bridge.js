@@ -193,7 +193,7 @@ export class Bridge extends React.Component {
     const feeToApply = getFeeToApply(homeStore.feeManager, foreignStore.feeManager, !reverse)
 
     if (validFee(feeToApply)) {
-      fee = feeToApply.multipliedBy(10**12)
+      fee = feeToApply
       if (finalAmount.lt(fee)) {
         swal('Error', 'amount is less than a fee', 'error')
         return
