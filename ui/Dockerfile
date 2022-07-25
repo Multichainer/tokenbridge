@@ -20,6 +20,7 @@ COPY commons/package.json ./commons/
 COPY ui/package.json ./ui/
 COPY ui/lib/web3-eth/index.js ./ui/lib/web3-eth/index.js
 COPY yarn.lock .
+RUN git config --global url."https://github".insteadOf git://github
 RUN NOYARNPOSTINSTALL=1 yarn install --frozen-lockfile --production
 
 COPY ./commons ./commons
