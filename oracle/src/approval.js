@@ -4,6 +4,8 @@ const { redis } = require('./services/redisClient')
 const store = require('./services/approvalStore')
 const telegramClient = require('./services/telegramClient')
 const { connectApprovalToQueue, publishJobs } = require('./services/amqpClient')
+const { getChainId } = require('./tx/web3')
+const { web3Home, web3Foreign } = require('./services/web3')
 const { EXIT_CODES } = require('./utils/constants')
 const {
   APPROVAL_QUEUE,
@@ -17,6 +19,8 @@ const {
   deferNotify,
   stampRecord,
   recordMacValid,
+  signatureAlreadyApproved,
+  decodeJob,
   signJobs,
   decisionFromCallback,
   parseCallbackData,
@@ -30,9 +34,10 @@ delete process.env.ORACLE_VALIDATOR_ADDRESS_PRIVATE_KEY
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 let telegram
+let chainIds = null
 
 function messageText(record, decisionLine) {
-  const base = formatApprovalMessage(record)
+  const base = formatApprovalMessage(record, chainIds)
   if (!decisionLine) return base
   return `${base}\n\n<b>${decisionLine}</b>`
 }
@@ -76,7 +81,7 @@ async function deferForTelegramTimeout(config, record, errorMessage) {
 }
 
 async function notify(config, record) {
-  const sent = await telegram.sendApproval(config.chatId, formatApprovalMessage(record), record.id)
+  const sent = await telegram.sendApproval(config.chatId, formatApprovalMessage(record, chainIds), record.id)
   record.status = 'pending'
   record.telegramMessageId = sent.message_id
   record.telegramChatId = sent.chat && sent.chat.id
@@ -188,6 +193,20 @@ async function acceptEnvelope(config, envelope) {
   if (action === 'wait') {
     logger.info({ id }, 'Approval is already waiting for Telegram')
     return 'ack'
+  }
+  if (action === 'notify' && envelope.event === 'CollectedSignatures') {
+    const decoded = decodeJob(record.jobs[0])
+    const originTxHash = decoded && decoded.originTxHash
+    const alreadyApproved = signatureAlreadyApproved(await store.list(), originTxHash, config.stateSecret)
+    if (alreadyApproved) {
+      record.status = 'approved'
+      record.decidedAt = Date.now()
+      record.decidedBy = 'prior-signature-approval'
+      await saveRecord(config, record)
+      await forwardApproved(config, id)
+      logger.info({ id, originTxHash }, 'Release continues after the signature approval')
+      return 'ack'
+    }
   }
   if (action === 'notify') {
     if (notifyDeadlineReached(record.firstNotifyAt, Date.now())) {
@@ -382,6 +401,40 @@ function schedulePoll(config, delay) {
   }, delay)
 }
 
+function postedDecision(status) {
+  if (status === 'rejected') return 'Rejected. The sender will not receive this transaction.'
+  if (status === 'forwarded') return 'Approved. Sent to the sender.'
+  if (status === 'approved') return 'Approved. Delivery to the sender failed and will be retried.'
+  return ''
+}
+
+async function refreshPostedCards(config) {
+  const records = await store.list()
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]
+    if (!record || !record.telegramMessageId || !recordMacValid(record, config.stateSecret)) continue
+    const chatId = record.telegramChatId || config.chatId
+    try {
+      if (record.status === 'pending') {
+        await telegram.editApproval(
+          chatId,
+          record.telegramMessageId,
+          formatApprovalMessage(record, chainIds),
+          record.id
+        )
+      } else {
+        const decision = postedDecision(record.status)
+        if (!decision) continue
+        await telegram.editDecision(chatId, record.telegramMessageId, messageText(record, decision))
+      }
+      logger.info({ id: record.id, telegramMessageId: record.telegramMessageId }, 'Refreshed approval card')
+    } catch (e) {
+      if (String(e.message).indexOf('message is not modified') !== -1) continue
+      logger.error({ id: record.id, err: e.message }, 'Failed to refresh an approval card')
+    }
+  }
+}
+
 async function initialize() {
   const config = readApprovalConfig()
 
@@ -396,7 +449,22 @@ async function initialize() {
   }
 
   telegram = telegramClient(config.botToken)
-  logger.info({ chatId: config.chatId, admins: config.adminIds.length }, 'Transaction approval worker started')
+  try {
+    chainIds = {
+      home: {
+        id: String(await getChainId(web3Home)),
+        explorer: String(process.env.ORACLE_HOME_EXPLORER_URL || '').replace(/\/$/, '')
+      },
+      foreign: {
+        id: String(await getChainId(web3Foreign)),
+        explorer: String(process.env.ORACLE_FOREIGN_EXPLORER_URL || '').replace(/\/$/, '')
+      }
+    }
+  } catch (e) {
+    logger.error({ err: e.message }, 'Chain ids are unavailable. Cards will name home and foreign without numbers.')
+  }
+  logger.info({ chatId: config.chatId, admins: config.adminIds.length, chainIds }, 'Transaction approval worker started')
+  await refreshPostedCards(config)
 
   connectApprovalToQueue({
     queueName: APPROVAL_QUEUE,

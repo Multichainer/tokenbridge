@@ -52,6 +52,16 @@ function telegramClient(botToken) {
         reply_markup: keyboard(requestId)
       })
     },
+    editApproval(chatId, messageId, text, requestId) {
+      return call('editMessageText', {
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        reply_markup: keyboard(requestId)
+      })
+    },
     editDecision(chatId, messageId, text) {
       return call('editMessageText', {
         chat_id: chatId,

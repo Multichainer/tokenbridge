@@ -137,6 +137,8 @@ A rejected transaction is not sent later. To reconsider it, remove its `approval
 
 If Telegram does not accept the card, the worker retries for one minute and then waits five minutes between later attempts. The withdrawal stays queued with its calldata. A sender accepts a job only when it carries a signature made with `ORACLE_TX_APPROVAL_STATE_SECRET`. The same secret signs the Redis record, so editing that record does not approve a transaction. The card shows the recipient and value taken from the calldata.
 
+A native-to-ERC swap asks for approval once, before `submitSignature` on home. After that approval, `executeSignatures` is sent to foreign without a second card, and the foreign bridge transfers the ERC-20. Rejecting the first card keeps the signature off the home chain. The native coins are already burned by the user's transaction, and the foreign bridge keeps the ERC-20.
+
 ### Build the image without running the oracle
 
 To build the image change the directory:

@@ -20,6 +20,7 @@ const {
   unsealJobs,
   stampRecord,
   recordMacValid,
+  signatureAlreadyApproved,
   decisionFromCallback,
   parseCallbackData,
   jobsForSender,
@@ -28,6 +29,7 @@ const {
   APPROVAL_QUEUE
 } = require('../src/services/txApproval')
 const { redact } = require('../src/services/telegramClient')
+const { createMessage } = require('../src/utils/message')
 
 const tx = '0x1111111111111111111111111111111111111111111111111111111111111111'
 const otherTx = '0x2222222222222222222222222222222222222222222222222222222222222222'
@@ -282,8 +284,10 @@ describe('txApproval', () => {
 
   it('shows the transaction summary in Telegram without the calldata', () => {
     const envelope = sampleEnvelope()
-    const text = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope))
+    const text = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope), { home: 77, foreign: 42 })
 
+    expect(text).to.contain('Swap: <code>home chain 77 → foreign chain 42</code>')
+    expect(text).to.contain('Assets: <code>native → ERC-20</code>')
     expect(text).to.contain('UserRequestForSignature')
     expect(text).to.contain(tx)
     expect(text).to.contain(recipient)
@@ -293,11 +297,143 @@ describe('txApproval', () => {
     expect(text).to.contain('to <code>3532</code>')
     expect(text).to.contain('executeAffirmation')
     expect(text).to.not.contain(calldata)
+
+    const reverse = formatApprovalMessage(Object.assign({}, envelope, { event: 'UserRequestForAffirmation' }), {
+      home: 77,
+      foreign: 42
+    })
+    expect(reverse).to.contain('Swap: <code>foreign chain 42 → home chain 77</code>')
+    expect(reverse).to.contain('Assets: <code>ERC-20 → native</code>')
+
+    const linked = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope), {
+      home: { id: 77, explorer: 'https://home.example' },
+      foreign: { id: 42, explorer: 'https://foreign.example' }
+    })
+    expect(linked).to.contain(`https://home.example/tx/${tx}`)
+    expect(linked).to.contain(`https://foreign.example/address/${recipient}`)
+
+    const known = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope), {
+      home: { id: 56 },
+      foreign: { id: 1 }
+    })
+    expect(known).to.contain(`https://bscscan.com/tx/${tx}`)
+    expect(known).to.contain(`https://etherscan.io/address/${recipient}`)
+    expect(known).to.contain('BNB Smart Chain (56) → Ethereum (1)')
+
+    const named = formatApprovalMessage(Object.assign({}, envelope, { event: 'UserRequestForAffirmation' }), {
+      home: { id: 106 },
+      foreign: { id: 128 }
+    })
+    expect(named).to.contain('Heco (128) → Velas (106)')
   })
 
   it('parses queued JSON from a buffer', () => {
     const envelope = sampleEnvelope()
     expect(parseMessageContent(Buffer.from(JSON.stringify(envelope)))).to.deep.equal(envelope)
+  })
+
+  it('shows the native-to-erc release taken from the signed bridge message', () => {
+    const foreignBridge = '0x00000000000000000000000000000000000000cc'
+    const message = createMessage({
+      recipient,
+      value: '10',
+      transactionHash: tx,
+      bridgeAddress: foreignBridge,
+      expectedMessageLength: 104
+    })
+    const signature = `0x${'ab'.repeat(65)}`
+    const submitData = web3.eth.abi.encodeFunctionCall(
+      {
+        name: 'submitSignature',
+        type: 'function',
+        inputs: [{ type: 'bytes', name: 'signature' }, { type: 'bytes', name: 'message' }]
+      },
+      [signature, message]
+    )
+    const releaseData = web3.eth.abi.encodeFunctionCall(
+      {
+        name: 'executeSignatures',
+        type: 'function',
+        inputs: [{ type: 'bytes', name: 'message' }, { type: 'bytes', name: 'signatures' }]
+      },
+      [message, signature]
+    )
+    const submitJob = {
+      data: submitData,
+      gasEstimate: 1000,
+      transactionReference: tx,
+      to: homeBridge,
+      summary: { recipient, value: '10', blockNumber: 40 }
+    }
+    const releaseJob = {
+      data: releaseData,
+      gasEstimate: 1000,
+      transactionReference: otherTx,
+      to: foreignBridge,
+      summary: { recipient, value: '0x0a', originTxHash: tx, blockNumber: 41 }
+    }
+
+    expect(validateEnvelope(buildApprovalEnvelope({
+      targetQueue: 'home-prioritized',
+      event: 'UserRequestForSignature',
+      sender: 'home',
+      jobs: [submitJob]
+    }))).to.equal(null)
+    expect(validateEnvelope(buildApprovalEnvelope({
+      targetQueue: 'foreign-prioritized',
+      event: 'CollectedSignatures',
+      sender: 'foreign',
+      jobs: [releaseJob]
+    }))).to.equal(null)
+
+    const text = formatApprovalMessage({
+      id: 'abc',
+      event: 'CollectedSignatures',
+      sender: 'foreign',
+      jobs: [releaseJob]
+    })
+    expect(text).to.contain('executeSignatures')
+    expect(text).to.contain('Value: <code>10</code>')
+    expect(text).to.contain(recipient)
+    expect(text).to.contain(tx)
+
+    submitJob.summary.value = '99'
+    expect(validateEnvelope(buildApprovalEnvelope({
+      targetQueue: 'home-prioritized',
+      event: 'UserRequestForSignature',
+      sender: 'home',
+      jobs: [submitJob]
+    }))).to.equal('summary value does not match calldata')
+  })
+
+  it('continues a release when the signature request was already approved', () => {
+    const secret = 'state-secret'
+    const approved = stampRecord(
+      {
+        id: 'sig',
+        status: 'forwarded',
+        event: 'UserRequestForSignature',
+        sender: 'home',
+        jobs: [{ transactionReference: tx, data: '0x', to: homeBridge }]
+      },
+      secret
+    )
+    const rejected = stampRecord(
+      {
+        id: 'other',
+        status: 'rejected',
+        event: 'UserRequestForSignature',
+        sender: 'home',
+        jobs: [{ transactionReference: otherTx, data: '0x', to: homeBridge }]
+      },
+      secret
+    )
+
+    expect(signatureAlreadyApproved([approved], tx, secret)).to.equal(true)
+    expect(signatureAlreadyApproved([rejected], otherTx, secret)).to.equal(false)
+    expect(signatureAlreadyApproved([approved], otherTx, secret)).to.equal(false)
+    approved.status = 'rejected'
+    expect(signatureAlreadyApproved([approved], tx, secret)).to.equal(false)
   })
 
   it('redacts the bot token from transport errors', () => {

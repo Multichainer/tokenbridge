@@ -225,6 +225,22 @@ function sentJobKey(job) {
   return `approval:sent:${String(job.transactionReference).toLowerCase()}:${dataHash}`
 }
 
+function parseBridgeMessage(message) {
+  const hex = String(message || '').replace(/^0x/i, '')
+  if (!/^[0-9a-fA-F]{208}$/.test(hex)) return null
+  try {
+    const value = web3.eth.abi.decodeParameter('uint256', `0x${hex.slice(40, 104)}`)
+    return {
+      recipient: `0x${hex.slice(0, 40)}`,
+      value: value.toString(),
+      txHash: `0x${hex.slice(104, 168)}`,
+      bridgeAddress: `0x${hex.slice(168, 208)}`
+    }
+  } catch (e) {
+    return null
+  }
+}
+
 function decodeJob(job) {
   if (!job || typeof job.data !== 'string' || job.data.length < 10) return null
   const selector = job.data.slice(0, 10).toLowerCase()
@@ -239,6 +255,23 @@ function decodeJob(job) {
         value: decoded[1].toString(),
         txHash: decoded[2]
       }
+    }
+    if (
+      method.signature === 'submitSignature(bytes,bytes)' ||
+      method.signature === 'executeSignatures(bytes,bytes)'
+    ) {
+      const messageArg = method.signature === 'submitSignature(bytes,bytes)' ? decoded[1] : decoded[0]
+      const parsed = parseBridgeMessage(messageArg)
+      if (!parsed) return { method: method.name }
+      const result = {
+        method: method.name,
+        recipient: parsed.recipient,
+        value: parsed.value,
+        originTxHash: parsed.txHash,
+        messageBridge: parsed.bridgeAddress
+      }
+      if (method.signature === 'submitSignature(bytes,bytes)') result.txHash = parsed.txHash
+      return result
     }
     return { method: method.name }
   } catch (e) {
@@ -261,6 +294,19 @@ function calldataConflict(job) {
     const actual = new BigNumber(decoded.value)
     if (shown.isNaN() || actual.isNaN() || !shown.eq(actual)) return 'summary value does not match calldata'
   }
+  if (
+    decoded.originTxHash &&
+    summary.originTxHash &&
+    summary.originTxHash.toLowerCase() !== decoded.originTxHash.toLowerCase()
+  ) {
+    return 'summary origin does not match calldata'
+  }
+  if (decoded.messageBridge) {
+    const foreign = process.env.COMMON_FOREIGN_BRIDGE_ADDRESS || ''
+    if (!foreign || decoded.messageBridge.toLowerCase() !== foreign.toLowerCase()) {
+      return 'message bridge does not match the foreign bridge'
+    }
+  }
   return null
 }
 
@@ -268,6 +314,17 @@ function expectedBridge(targetQueue) {
   if (targetQueue === HOME_SENDER_QUEUE) return process.env.COMMON_HOME_BRIDGE_ADDRESS || ''
   if (targetQueue === FOREIGN_SENDER_QUEUE) return process.env.COMMON_FOREIGN_BRIDGE_ADDRESS || ''
   return ''
+}
+
+function signatureAlreadyApproved(records, originTxHash, secret) {
+  if (!originTxHash) return false
+  const wanted = String(originTxHash).toLowerCase()
+  return (records || []).some(record => {
+    if (!recordMacValid(record, secret)) return false
+    if (record.event !== 'UserRequestForSignature') return false
+    if (record.status !== 'approved' && record.status !== 'forwarded') return false
+    return (record.jobs || []).some(job => String(job.transactionReference || '').toLowerCase() === wanted)
+  })
 }
 
 function classifyExisting(record) {
@@ -349,6 +406,7 @@ function escapeHtml(value) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 function displayValue(value) {
@@ -357,35 +415,125 @@ function displayValue(value) {
   return number.toString(10)
 }
 
-function formatJob(job, index) {
+const EXPLORERS_BY_CHAIN_ID = {
+  1: 'https://etherscan.io',
+  56: 'https://bscscan.com',
+  97: 'https://testnet.bscscan.com',
+  106: 'https://evmexplorer.velas.com',
+  111: 'https://evmexplorer.testnet.velas.com',
+  128: 'https://hecoinfo.com',
+  256: 'https://testnet.hecoinfo.com'
+}
+
+const CHAIN_NAMES_BY_ID = {
+  1: 'Ethereum',
+  56: 'BNB Smart Chain',
+  97: 'BNB Smart Chain testnet',
+  106: 'Velas',
+  111: 'Velas testnet',
+  128: 'Heco',
+  256: 'Heco testnet'
+}
+
+function chainInfo(side, chainIds) {
+  const raw = chainIds && chainIds[side]
+  if (raw && typeof raw === 'object') return { id: raw.id, explorer: raw.explorer || '' }
+  return { id: raw, explorer: '' }
+}
+
+function referenceSide(event) {
+  if (event === 'UserRequestForAffirmation' || event === 'Transfer') return 'foreign'
+  if (event === 'UserRequestForSignature' || event === 'CollectedSignatures') return 'home'
+  return null
+}
+
+function recipientSide(event) {
+  if (event === 'UserRequestForAffirmation' || event === 'Transfer') return 'home'
+  if (event === 'UserRequestForSignature' || event === 'CollectedSignatures') return 'foreign'
+  return null
+}
+
+function explorerOrigin(side, chainIds) {
+  const info = chainInfo(side, chainIds)
+  const id = info.id == null || info.id === '' ? '' : String(info.id)
+  if (EXPLORERS_BY_CHAIN_ID[id]) return EXPLORERS_BY_CHAIN_ID[id]
+  return String(info.explorer || '').replace(/\/$/, '')
+}
+
+function linkedValue(value, side, chainIds, kind) {
+  const shown = escapeHtml(value)
+  const origin = explorerOrigin(side, chainIds)
+  if (!origin) return `<code>${shown}</code>`
+  const href = escapeHtml(`${origin}/${kind}/${value}`)
+  return `<a href="${href}">${shown}</a>`
+}
+
+function formatJob(job, index, context) {
+  const info = context || {}
   const decoded = decodeJob(job) || { method: 'unknown' }
   const lines = [
-    `${index + 1}. tx <code>${escapeHtml(job.transactionReference)}</code>`,
-    `Bridge: <code>${escapeHtml(job.to)}</code>`,
+    `${index + 1}. tx ${linkedValue(job.transactionReference, referenceSide(info.event), info.chainIds, 'tx')}`,
+    `Bridge: ${linkedValue(job.to, info.sender, info.chainIds, 'address')}`,
     `Method: <code>${escapeHtml(decoded.method)}</code>`
   ]
   if (decoded.recipient) {
-    lines.push(`Recipient: <code>${escapeHtml(decoded.recipient)}</code>`)
+    lines.push(
+      `Recipient: ${linkedValue(decoded.recipient, recipientSide(info.event), info.chainIds, 'address')}`
+    )
     lines.push(`Value: <code>${escapeHtml(displayValue(decoded.value))}</code>`)
+  }
+  if (
+    decoded.originTxHash &&
+    (!decoded.txHash || decoded.txHash.toLowerCase() !== decoded.originTxHash.toLowerCase())
+  ) {
+    lines.push(`Origin tx: ${linkedValue(decoded.originTxHash, 'home', info.chainIds, 'tx')}`)
   }
   const block = sourceBlock(job)
   if (block != null) lines.push(`Block: <code>${block}</code>`)
   return lines
 }
 
-function formatApprovalMessage(record) {
-  const lines = [
-    '<b>Swap approval required</b>',
-    '',
+function swapDirection(event) {
+  if (event === 'UserRequestForAffirmation' || event === 'Transfer') {
+    return { from: 'foreign', to: 'home', assets: 'ERC-20 → native' }
+  }
+  if (event === 'UserRequestForSignature' || event === 'CollectedSignatures') {
+    return { from: 'home', to: 'foreign', assets: 'native → ERC-20' }
+  }
+  return null
+}
+
+function sideLabel(side, chainIds) {
+  const id = chainInfo(side, chainIds).id
+  if (id == null || id === '') return side
+  const name = CHAIN_NAMES_BY_ID[String(id)]
+  if (name) return `${name} (${id})`
+  return `${side} chain ${id}`
+}
+
+function formatApprovalMessage(record, chainIds) {
+  const lines = ['<b>Swap approval required</b>', '']
+  const direction = swapDirection(record.event)
+  if (direction) {
+    const from = sideLabel(direction.from, chainIds)
+    const to = sideLabel(direction.to, chainIds)
+    lines.push(`Swap: <code>${escapeHtml(`${from} → ${to}`)}</code>`)
+    lines.push(`Assets: <code>${escapeHtml(direction.assets)}</code>`)
+  }
+  lines.push(
     `Request: <code>${escapeHtml(record.id)}</code>`,
     `Event: <code>${escapeHtml(record.event)}</code>`,
     `Relay side: <code>${escapeHtml(record.sender)}</code>`,
     `Jobs: ${record.jobs.length}`
-  ]
+  )
   let hidden = 0
 
   for (let i = 0; i < record.jobs.length; i++) {
-    const block = formatJob(record.jobs[i], i)
+    const block = formatJob(record.jobs[i], i, {
+      event: record.event,
+      sender: record.sender,
+      chainIds
+    })
     const nextLength = lines.concat([''], block).join('\n').length
     if (nextLength > 3500) {
       hidden = record.jobs.length - i
@@ -429,6 +577,7 @@ module.exports = {
   requestId,
   TELEGRAM_NOTIFY_DEADLINE_MS,
   TELEGRAM_NOTIFY_RETRY_MS,
+  signatureAlreadyApproved,
   classifyExisting,
   notifyDeadlineReached,
   noteNotifyFailure,
