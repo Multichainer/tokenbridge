@@ -71,7 +71,13 @@ function processAffirmationRequestsBuilder(config) {
           gasEstimate,
           extraGas: EXTRA_GAS_ABSOLUTE,
           transactionReference: affirmationRequest.transactionHash,
-          to: config.home.bridgeAddress
+          to: config.home.bridgeAddress,
+          summary: {
+            sender,
+            executor,
+            messageId,
+            blockNumber: affirmationRequest.blockNumber
+          }
         })
       })
       .map(promise => limit(promise))

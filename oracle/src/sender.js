@@ -2,6 +2,7 @@ require('../env')
 const path = require('path')
 const { connectSenderToQueue } = require('./services/amqpClient')
 const { redis } = require('./services/redisClient')
+const { readApprovalConfig, signJobs, unsealJobs, sentJobKey } = require('./services/txApproval')
 const GasPrice = require('./services/gasPrice')
 const logger = require('./services/logger')
 const { getShutdownFlag } = require('./services/shutdownState')
@@ -29,6 +30,12 @@ if (process.argv.length < 3) {
 }
 
 const config = require(path.join('../config/', process.argv[2]))
+const approvalConfig = readApprovalConfig()
+
+if (approvalConfig.enabled && approvalConfig.problems.length) {
+  approvalConfig.problems.forEach(problem => logger.error(problem))
+  process.exit(EXIT_CODES.GENERAL_ERROR)
+}
 
 const { web3, web3Fallback } = config
 const web3Redundant = ORACLE_TX_REDUNDANCY === 'true' ? config.web3Redundant : web3
@@ -119,7 +126,21 @@ async function main({ msg, ackMsg, nackMsg, channel, scheduleForRetry, scheduleT
       return
     }
 
-    const txArray = JSON.parse(msg.content)
+    let txArray
+    try {
+      const parsed = JSON.parse(msg.content)
+      if (!approvalConfig.enabled) {
+        if (!Array.isArray(parsed)) throw new Error('expected a job array')
+        txArray = parsed
+      } else {
+        txArray = unsealJobs(parsed, approvalConfig.stateSecret)
+        if (!txArray) throw new Error('missing or invalid approval signature')
+      }
+    } catch (e) {
+      logger.error({ err: e.message }, 'Dropping a sender message that is not an approved job')
+      ackMsg(msg)
+      return
+    }
     logger.debug(`Msg received with ${txArray.length} Tx to send`)
     const gasPrice = GasPrice.getPrice().toString(10)
 
@@ -161,18 +182,34 @@ async function main({ msg, ackMsg, nackMsg, channel, scheduleForRetry, scheduleT
 
           logger.info(`Transaction ${job.txHash} was not mined, updating gasPrice: ${job.gasPrice} -> ${gasPrice}`)
         }
+        if (!isResend && approvalConfig.enabled) {
+          const claimed = await redis.set(sentJobKey(job), '1', 'NX')
+          if (claimed !== 'OK') {
+            logger.info(
+              { eventTransactionHash: job.transactionReference },
+              'Skipping a duplicate approved transaction'
+            )
+            return
+          }
+        }
         logger.info(`Sending transaction with nonce ${nonce}`)
-        const txHash = await sendTx({
-          data: job.data,
-          nonce,
-          gasPrice,
-          amount: '0',
-          gasLimit,
-          privateKey: config.validatorPrivateKey,
-          to: job.to,
-          chainId,
-          web3: web3Redundant
-        })
+        let txHash
+        try {
+          txHash = await sendTx({
+            data: job.data,
+            nonce,
+            gasPrice,
+            amount: '0',
+            gasLimit,
+            privateKey: config.validatorPrivateKey,
+            to: job.to,
+            chainId,
+            web3: web3Redundant
+          })
+        } catch (sendError) {
+          if (!isResend && approvalConfig.enabled) await redis.del(sentJobKey(job))
+          throw sendError
+        }
         const resendJob = {
           ...job,
           txHash,
@@ -223,13 +260,14 @@ async function main({ msg, ackMsg, nackMsg, channel, scheduleForRetry, scheduleT
       await updateNonce(nonce)
     }
 
+    const seal = jobs => (approvalConfig.enabled ? signJobs(jobs, approvalConfig.stateSecret) : jobs)
     if (failedTx.length) {
       logger.info(`Sending ${failedTx.length} Failed Tx to Queue`)
-      await scheduleForRetry(failedTx, msg.properties.headers['x-retries'])
+      await scheduleForRetry(seal(failedTx), msg.properties.headers['x-retries'])
     }
     if (resendJobs.length) {
       logger.info({ delay: config.resendInterval }, `Sending ${resendJobs.length} Tx Delayed Resend Requests to Queue`)
-      await scheduleTransactionResend(resendJobs)
+      await scheduleTransactionResend(seal(resendJobs))
     }
     ackMsg(msg)
     logger.debug(`Finished processing msg`)

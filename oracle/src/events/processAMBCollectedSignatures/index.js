@@ -145,7 +145,13 @@ function processCollectedSignaturesBuilder(config) {
           gasEstimate,
           extraGas: EXTRA_GAS_ABSOLUTE,
           transactionReference: colSignature.transactionHash,
-          to: config.foreign.bridgeAddress
+          to: config.foreign.bridgeAddress,
+          summary: {
+            sender: parsedMessage.sender,
+            executor: parsedMessage.executor,
+            messageId: parsedMessage.messageId,
+            blockNumber: colSignature.blockNumber
+          }
         })
       })
       .map(promise => limit(promise))

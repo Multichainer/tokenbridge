@@ -136,7 +136,12 @@ function processInformationRequestsBuilder(config) {
           gasEstimate,
           extraGas: EXTRA_GAS_ABSOLUTE,
           transactionReference: informationRequest.transactionHash,
-          to: config.home.bridgeAddress
+          to: config.home.bridgeAddress,
+          summary: {
+            messageId,
+            method: asyncCallMethod,
+            blockNumber: informationRequest.blockNumber
+          }
         })
       })
       .map(promise => limit(promise))

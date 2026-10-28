@@ -136,10 +136,56 @@ async function generateTransactionResend({ data, channelWrapper, channel, queueN
   })
 }
 
+function connectApprovalToQueue({ queueName, cb }) {
+  const channelWrapper = connection.createChannel({
+    json: true
+  })
+
+  channelWrapper.addSetup(async channel => {
+    await channel.assertQueue(queueName, { durable: true, maxPriority: SENDER_QUEUE_MAX_PRIORITY })
+    await channel.prefetch(1)
+    await channel.consume(queueName, msg =>
+      cb({
+        msg,
+        channel: channelWrapper,
+        ackMsg: job => channelWrapper.ack(job),
+        nackMsg: job => channelWrapper.nack(job, false, true)
+      })
+    )
+  })
+}
+
+let publisherChannel
+
+function publisher() {
+  if (!publisherChannel) {
+    publisherChannel = connection.createChannel({
+      json: true,
+      async setup(channel) {
+        await channel.assertQueue('home-prioritized', { durable: true, maxPriority: SENDER_QUEUE_MAX_PRIORITY })
+        await channel.assertQueue('foreign-prioritized', { durable: true, maxPriority: SENDER_QUEUE_MAX_PRIORITY })
+      }
+    })
+  }
+  return publisherChannel
+}
+
+async function publishJobs(queueName, jobs) {
+  if (queueName !== 'home-prioritized' && queueName !== 'foreign-prioritized') {
+    throw new Error(`Refusing to publish approval jobs to ${queueName}`)
+  }
+  await publisher().sendToQueue(queueName, jobs, {
+    persistent: true,
+    priority: SENDER_QUEUE_SEND_PRIORITY
+  })
+}
+
 module.exports = {
   isAttached,
   connectWatcherToQueue,
   connectSenderToQueue,
+  connectApprovalToQueue,
+  publishJobs,
   connection,
   generateRetry
 }

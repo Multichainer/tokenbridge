@@ -125,6 +125,17 @@ In case you need to reset your bridge or setup a new one (with different configu
   - `yarn watcher:affirmation-request`
   - `yarn sender:home`
   - `yarn sender:foreign`
+  - `yarn approval`
+
+### Transaction approval
+
+Set `ORACLE_TX_APPROVAL_ENABLED=true` to hold every watcher job until a Telegram admin approves it. Watchers then publish to the `approval` queue. The approval worker posts the transaction summary (event, recipient, value, transaction hash, bridge) to `ORACLE_TX_APPROVAL_CHAT_ID`. Approve forwards the original job to `home-prioritized` or `foreign-prioritized`. Reject leaves it out of the sender queue.
+
+Only Telegram user ids listed in `ORACLE_TX_APPROVAL_ADMIN_IDS` can press the buttons. The approval worker does not use the validator private key. With the flag unset, watchers publish straight to the sender queues as before.
+
+A rejected transaction is not sent later. To reconsider it, remove its `approval:request:<id>` record from Redis and set the watcher block key shown on the card. The card prints the source block and that key's new value, one block earlier.
+
+If Telegram does not accept the card, the worker retries for one minute and then waits five minutes between later attempts. The withdrawal stays queued with its calldata. A sender accepts a job only when it carries a signature made with `ORACLE_TX_APPROVAL_STATE_SECRET`. The same secret signs the Redis record, so editing that record does not approve a transaction. The card shows the recipient and value taken from the calldata.
 
 ### Build the image without running the oracle
 

@@ -113,7 +113,14 @@ function processTransfersBuilder(config) {
           data,
           gasEstimate,
           transactionReference: transfer.transactionHash,
-          to: config.home.bridgeAddress
+          to: config.home.bridgeAddress,
+          summary: {
+            from,
+            to,
+            recipient: from,
+            value: String(value),
+            blockNumber: transfer.blockNumber
+          }
         })
       })
       .map(promise => limit(promise))

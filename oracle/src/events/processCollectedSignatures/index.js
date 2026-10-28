@@ -147,7 +147,8 @@ function processCollectedSignaturesBuilder(config) {
           data,
           gasEstimate,
           transactionReference: colSignature.transactionHash,
-          to: config.foreign.bridgeAddress
+          to: config.foreign.bridgeAddress,
+          summary: Object.assign({ blockNumber: colSignature.blockNumber }, collectedSignatureSummary(message))
         })
       })
       .map(promise => limit(promise))
@@ -155,6 +156,19 @@ function processCollectedSignaturesBuilder(config) {
     await Promise.all(callbacks)
 
     return txToSend
+  }
+}
+
+function collectedSignatureSummary(message) {
+  try {
+    const parsed = parseMessage(message)
+    return {
+      recipient: parsed.recipient,
+      value: parsed.amount,
+      originTxHash: parsed.txHash
+    }
+  } catch (e) {
+    return undefined
   }
 }
 

@@ -1,6 +1,7 @@
 require('../env')
 const path = require('path')
 const { connectWatcherToQueue, connection } = require('./services/amqpClient')
+const { isTxApprovalEnabled, payloadsForWatcher, queueNameForWatcher } = require('./services/txApproval')
 const { redis } = require('./services/redisClient')
 const logger = require('./services/logger')
 const { getShutdownFlag } = require('./services/shutdownState')
@@ -39,8 +40,14 @@ async function initialize() {
     web3.currentProvider.urls.forEach(checkHttps(chain))
 
     await getLastProcessedBlock()
+    if (isTxApprovalEnabled()) {
+      logger.info(
+        { queue: queueNameForWatcher(config), targetQueue: config.queue },
+        'Transaction approval gate is enabled'
+      )
+    }
     connectWatcherToQueue({
-      queueName: config.queue,
+      queueName: queueNameForWatcher(config),
       cb: runMain
     })
   } catch (e) {
@@ -204,7 +211,10 @@ async function main({ sendToQueue }) {
       logger.info('Transactions to send:', job.length)
 
       if (job.length) {
-        await sendToQueue(job)
+        const payloads = payloadsForWatcher(config, job)
+        for (let i = 0; i < payloads.length; i++) {
+          await sendToQueue(payloads[i])
+        }
       }
     }
 

@@ -72,7 +72,13 @@ function processSignatureRequestsBuilder(config) {
           data,
           gasEstimate,
           transactionReference: signatureRequest.transactionHash,
-          to: config.home.bridgeAddress
+          to: config.home.bridgeAddress,
+          summary: {
+            sender,
+            executor,
+            messageId,
+            blockNumber: signatureRequest.blockNumber
+          }
         })
       })
       .map(promise => limit(promise))

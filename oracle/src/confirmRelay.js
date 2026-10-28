@@ -2,6 +2,7 @@ require('../env')
 const path = require('path')
 const fs = require('fs')
 const { isAttached, connectWatcherToQueue, connection } = require('./services/amqpClient')
+const { isTxApprovalEnabled, payloadsForWatcher, queueNameForWatcher } = require('./services/txApproval')
 const logger = require('./services/logger')
 const GasPrice = require('./services/gasPrice')
 const { getNonce, getChainId, getEventsFromTx } = require('./tx/web3')
@@ -53,6 +54,10 @@ async function initialize() {
     web3.currentProvider.urls.forEach(checkHttps(chain))
 
     attached = await isAttached()
+    if (isTxApprovalEnabled() && !attached) {
+      logger.error('Transaction approval is enabled, but RabbitMQ is unavailable. Refusing to send without approval.')
+      process.exit(EXIT_CODES.GENERAL_ERROR)
+    }
     if (attached) {
       logger.info('RabbitMQ container is available, using oracle sender')
     } else {
@@ -60,7 +65,7 @@ async function initialize() {
     }
 
     connectWatcherToQueue({
-      queueName: config.queue,
+      queueName: queueNameForWatcher(config),
       cb: runMain
     })
   } catch (e) {
@@ -139,7 +144,10 @@ async function main({ sendJob, txHashes }) {
         logger.info({ txHash }, 'Transactions to send:', job.length)
 
         if (job.length) {
-          await sendJob(job)
+          const payloads = payloadsForWatcher(config, job)
+          for (let i = 0; i < payloads.length; i++) {
+            await sendJob(payloads[i])
+          }
         }
       }
     } catch (e) {

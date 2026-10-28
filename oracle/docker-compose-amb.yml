@@ -61,6 +61,13 @@ services:
     networks:
       - net_db_bridge_request
       - net_rabbit_bridge_request
+  bridge_approval:
+    extends:
+      file: docker-compose.yml
+      service: bridge_approval
+    networks:
+      - net_db_bridge_approval
+      - net_rabbit_bridge_approval
   bridge_shutdown:
     extends:
       file: docker-compose.yml
@@ -94,4 +101,8 @@ networks:
   net_rabbit_bridge_senderhome:
     driver: bridge
   net_rabbit_bridge_senderforeign:
+    driver: bridge
+  net_db_bridge_approval:
+    driver: bridge
+  net_rabbit_bridge_approval:
     driver: bridge
