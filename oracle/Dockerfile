@@ -13,7 +13,9 @@ RUN npm run compile
 
 FROM node:12
 
-RUN apt-get update && \
+RUN printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99no-check-valid-until && \
+    sed -i 's/^deb /# deb /; s/^# deb http:\/\/snapshot.debian.org/deb http:\/\/snapshot.debian.org/' /etc/apt/sources.list && \
+    apt-get update && \
     apt-get install -y build-essential libc6-dev libc6-dev-i386 wget && \
     apt-get clean
 

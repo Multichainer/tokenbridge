@@ -80,6 +80,11 @@ function processSignatureRequestsBuilder(config) {
           }
         }
 
+        const userTx = await web3.eth.getTransaction(signatureRequest.transactionHash)
+        if (!userTx || !userTx.from) {
+          throw new Error('RPC Connection Error: sender of the signature request cannot be obtained.')
+        }
+
         const data = bridgeContract.methods.submitSignature(signature.signature, message).encodeABI()
         txToSend.push({
           data,
@@ -87,6 +92,7 @@ function processSignatureRequestsBuilder(config) {
           transactionReference: signatureRequest.transactionHash,
           to: config.home.bridgeAddress,
           summary: {
+            sender: userTx.from,
             recipient,
             value: String(value),
             blockNumber: signatureRequest.blockNumber

@@ -115,6 +115,7 @@ function processTransfersBuilder(config) {
           transactionReference: transfer.transactionHash,
           to: config.home.bridgeAddress,
           summary: {
+            sender: from,
             from,
             to,
             recipient: from,

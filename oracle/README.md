@@ -129,7 +129,7 @@ In case you need to reset your bridge or setup a new one (with different configu
 
 ### Transaction approval
 
-Set `ORACLE_TX_APPROVAL_ENABLED=true` to hold every watcher job until a Telegram admin approves it. Watchers then publish to the `approval` queue. The approval worker posts the transaction summary (event, recipient, value, transaction hash, bridge) to `ORACLE_TX_APPROVAL_CHAT_ID`. Approve forwards the original job to `home-prioritized` or `foreign-prioritized`. Reject leaves it out of the sender queue.
+Set `ORACLE_TX_APPROVAL_ENABLED=true` to hold every watcher job until a Telegram admin approves it. Watchers then publish to the `approval` queue. The approval worker posts the transaction summary (event, sender, recipient, value, transaction hash, bridge) to `ORACLE_TX_APPROVAL_CHAT_ID`. The sender is the address that called `relayTokens`, linked to its explorer. The card ends with a note that Reject burns native tokens or locks the ERC-20 on the bridge. Approve forwards the original job to `home-prioritized` or `foreign-prioritized`. Reject leaves it out of the sender queue.
 
 Only Telegram user ids listed in `ORACLE_TX_APPROVAL_ADMIN_IDS` can press the buttons. The approval worker does not use the validator private key. With the flag unset, watchers publish straight to the sender queues as before.
 

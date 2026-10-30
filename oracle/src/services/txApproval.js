@@ -468,6 +468,27 @@ function linkedValue(value, side, chainIds, kind) {
   return `<a href="${href}">${shown}</a>`
 }
 
+function isAddress(value) {
+  return typeof value === 'string' && /^0x[0-9a-fA-F]{40}$/.test(value)
+}
+
+function userSide(event) {
+  if (event === 'UserRequestForAffirmation' || event === 'Transfer') return 'foreign'
+  if (event === 'UserRequestForSignature' || event === 'CollectedSignatures') return 'home'
+  return null
+}
+
+function rejectNote(event) {
+  if (event === 'UserRequestForSignature') return 'ℹ️ <i>Reject burns the tokens.</i>'
+  if (event === 'UserRequestForAffirmation' || event === 'Transfer') {
+    return 'ℹ️ <i>Reject locks the tokens on the bridge contract.</i>'
+  }
+  if (event === 'CollectedSignatures') {
+    return 'ℹ️ <i>Reject leaves the ERC-20 unreleased. The native tokens are already burned.</i>'
+  }
+  return null
+}
+
 function formatJob(job, index, context) {
   const info = context || {}
   const decoded = decodeJob(job) || { method: 'unknown' }
@@ -476,6 +497,10 @@ function formatJob(job, index, context) {
     `Bridge: ${linkedValue(job.to, info.sender, info.chainIds, 'address')}`,
     `Method: <code>${escapeHtml(decoded.method)}</code>`
   ]
+  const user = job.summary && job.summary.sender
+  if (isAddress(user)) {
+    lines.push(`Sender: ${linkedValue(user, userSide(info.event), info.chainIds, 'address')}`)
+  }
   if (decoded.recipient) {
     lines.push(
       `Recipient: ${linkedValue(decoded.recipient, recipientSide(info.event), info.chainIds, 'address')}`
@@ -553,6 +578,9 @@ function formatApprovalMessage(record, chainIds) {
     const key = record.watcherId ? `${record.watcherId}:lastProcessedBlock` : 'lastProcessedBlock'
     lines.push('', `Undo reject: set <code>${escapeHtml(key)}</code> to <code>${earliest - 1}</code>`)
   }
+
+  const note = rejectNote(record.event)
+  if (note) lines.push('', note)
 
   return lines.join('\n')
 }

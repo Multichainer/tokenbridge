@@ -65,6 +65,11 @@ function processAffirmationRequestsBuilder(config) {
           }
         }
 
+        const userTx = await config.foreign.web3.eth.getTransaction(affirmationRequest.transactionHash)
+        if (!userTx || !userTx.from) {
+          throw new Error('RPC Connection Error: sender of the affirmation request cannot be obtained.')
+        }
+
         const data = bridgeContract.methods
           .executeAffirmation(recipient, value, affirmationRequest.transactionHash)
           .encodeABI()
@@ -74,6 +79,7 @@ function processAffirmationRequestsBuilder(config) {
           transactionReference: affirmationRequest.transactionHash,
           to: config.home.bridgeAddress,
           summary: {
+            sender: userTx.from,
             recipient,
             value: String(value),
             blockNumber: affirmationRequest.blockNumber

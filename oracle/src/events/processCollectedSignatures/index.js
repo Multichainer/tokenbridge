@@ -143,12 +143,20 @@ function processCollectedSignaturesBuilder(config) {
           }
         }
         const data = foreign.bridgeContract.methods.executeSignatures(message, signatures).encodeABI()
+        const summary = Object.assign({ blockNumber: colSignature.blockNumber }, collectedSignatureSummary(message))
+        if (summary.originTxHash) {
+          const originTx = await home.web3.eth.getTransaction(summary.originTxHash)
+          if (!originTx || !originTx.from) {
+            throw new Error('RPC Connection Error: sender of the original transaction cannot be obtained.')
+          }
+          summary.sender = originTx.from
+        }
         txToSend.push({
           data,
           gasEstimate,
           transactionReference: colSignature.transactionHash,
           to: config.foreign.bridgeAddress,
-          summary: Object.assign({ blockNumber: colSignature.blockNumber }, collectedSignatureSummary(message))
+          summary
         })
       })
       .map(promise => limit(promise))

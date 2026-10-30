@@ -35,6 +35,7 @@ const tx = '0x1111111111111111111111111111111111111111111111111111111111111111'
 const otherTx = '0x2222222222222222222222222222222222222222222222222222222222222222'
 const homeBridge = '0x00000000000000000000000000000000000000aa'
 const recipient = '0x00000000000000000000000000000000000000bb'
+const sender = '0x00000000000000000000000000000000000000dd'
 
 function affirmationData(reference) {
   return web3.eth.abi.encodeFunctionCall(
@@ -60,6 +61,7 @@ function sampleJob(reference) {
     transactionReference: reference,
     to: homeBridge,
     summary: {
+      sender,
       recipient,
       value: '0x0a',
       blockNumber: 3533
@@ -291,8 +293,10 @@ describe('txApproval', () => {
     expect(text).to.contain('UserRequestForSignature')
     expect(text).to.contain(tx)
     expect(text).to.contain(recipient)
+    expect(text).to.contain(`Sender: <code>${sender}</code>`)
     expect(text).to.contain('Value: <code>10</code>')
     expect(text).to.contain('Block: <code>3533</code>')
+    expect(text).to.contain('ℹ️ <i>Reject burns the tokens.</i>')
     expect(text).to.contain('erc-native-signature-request:lastProcessedBlock')
     expect(text).to.contain('to <code>3532</code>')
     expect(text).to.contain('executeAffirmation')
@@ -304,12 +308,20 @@ describe('txApproval', () => {
     })
     expect(reverse).to.contain('Swap: <code>foreign chain 42 → home chain 77</code>')
     expect(reverse).to.contain('Assets: <code>ERC-20 → native</code>')
+    expect(reverse).to.contain('ℹ️ <i>Reject locks the tokens on the bridge contract.</i>')
+
+    const reverseLinked = formatApprovalMessage(Object.assign({}, envelope, { event: 'UserRequestForAffirmation' }), {
+      home: { id: 77, explorer: 'https://home.example' },
+      foreign: { id: 42, explorer: 'https://foreign.example' }
+    })
+    expect(reverseLinked).to.contain(`https://foreign.example/address/${sender}`)
 
     const linked = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope), {
       home: { id: 77, explorer: 'https://home.example' },
       foreign: { id: 42, explorer: 'https://foreign.example' }
     })
     expect(linked).to.contain(`https://home.example/tx/${tx}`)
+    expect(linked).to.contain(`https://home.example/address/${sender}`)
     expect(linked).to.contain(`https://foreign.example/address/${recipient}`)
 
     const known = formatApprovalMessage(Object.assign({ id: requestId(envelope) }, envelope), {
@@ -317,6 +329,7 @@ describe('txApproval', () => {
       foreign: { id: 1 }
     })
     expect(known).to.contain(`https://bscscan.com/tx/${tx}`)
+    expect(known).to.contain(`https://bscscan.com/address/${sender}`)
     expect(known).to.contain(`https://etherscan.io/address/${recipient}`)
     expect(known).to.contain('BNB Smart Chain (56) → Ethereum (1)')
 
@@ -363,14 +376,14 @@ describe('txApproval', () => {
       gasEstimate: 1000,
       transactionReference: tx,
       to: homeBridge,
-      summary: { recipient, value: '10', blockNumber: 40 }
+      summary: { sender, recipient, value: '10', blockNumber: 40 }
     }
     const releaseJob = {
       data: releaseData,
       gasEstimate: 1000,
       transactionReference: otherTx,
       to: foreignBridge,
-      summary: { recipient, value: '0x0a', originTxHash: tx, blockNumber: 41 }
+      summary: { sender, recipient, value: '0x0a', originTxHash: tx, blockNumber: 41 }
     }
 
     expect(validateEnvelope(buildApprovalEnvelope({
@@ -395,7 +408,9 @@ describe('txApproval', () => {
     expect(text).to.contain('executeSignatures')
     expect(text).to.contain('Value: <code>10</code>')
     expect(text).to.contain(recipient)
+    expect(text).to.contain(`Sender: <code>${sender}</code>`)
     expect(text).to.contain(tx)
+    expect(text).to.contain('ℹ️ <i>Reject leaves the ERC-20 unreleased. The native tokens are already burned.</i>')
 
     submitJob.summary.value = '99'
     expect(validateEnvelope(buildApprovalEnvelope({
